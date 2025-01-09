@@ -4,31 +4,16 @@ import './App.css';
 import Konva from 'konva';
 import useImage from 'use-image';
 
-const ColoredRect = () => {
-	const [color, setColor] = useState('green');
+const url = 'https://fastly.picsum.photos/id/9/5000/3269.jpg?hmac=cZKbaLeduq7rNB8X-bigYO8bvPIWtT-mh8GRXtU3vPc';
 
-	const handleClick = () => {
-		setColor(Konva.Util.getRandomColor());
-	};
-
-	return <Rect x={20} y={20} width={50} height={50} fill={color} shadowBlur={5} onClick={handleClick} />;
-};
-const url =
-	'https://imgin-stage.instrumental.ai/files%2Furn%3Adfx%3Aproject%3A5%2Furn%3Adfx%3Afile%3A3768732%2FPVT-DOE-JDR61762142SLA17X-SOLAR-170220111658.jpg?q=60&s=TzAvOclWasdwiqqQ33cq%2F7SmbPBkhBfANnhu%2FmeMHuE%3D&instck=2bef41cffe1bd5c92ff573019ec5aecb';
-const UnitImage = forwardRef<Konva.Image>((props, ref) => {
-	const [image, status] = useImage(
-		'https://imgin-stage.instrumental.ai/files%2Furn%3Adfx%3Aproject%3A5%2Furn%3Adfx%3Afile%3A3768732%2FPVT-DOE-JDR61762142SLA17X-SOLAR-170220111658.jpg?q=60&s=TzAvOclWasdwiqqQ33cq%2F7SmbPBkhBfANnhu%2FmeMHuE%3D&instck=2bef41cffe1bd5c92ff573019ec5aecb',
-	);
-	return <Image ref={ref} image={image} />;
-});
-
-// render(<App />, document.getElementById('root'));
 function App() {
 	const [stageScale, setStageScale] = useState(1);
 	const [stageX, setStageX] = useState(0);
 	const [stageY, setStageY] = useState(0);
 	const imgRef = useRef<Konva.Image>(null);
 	const [rectanglesProps, setRectanglesProps] = useState<Konva.RectConfig[] | null>(null);
+	const [rectanglesVisible, setRectanglesVisible] = useState(true);
+	const [linesVisible, setLinesVisible] = useState(true);
 	const [linesProps, setLinesProps] = useState<Konva.LineConfig[] | null>(null);
 	const [image, status] = useImage(url);
 
@@ -88,6 +73,12 @@ function App() {
 					<button onClick={() => setStageY(stageY - 100)}>⬇️ Pan Down</button>
 					<button onClick={() => setStageX(stageX + 100)}>⬅️ Pan Left</button>
 					<button onClick={() => setStageX(stageX - 100)}>➡️ Pan Right</button>
+					<button onClick={() => setRectanglesVisible((visible) => !visible)}>
+						{rectanglesVisible ? 'Hide' : 'Show'} Rectangles
+					</button>
+					<button onClick={() => setLinesVisible((visible) => !visible)}>
+						{linesVisible ? 'Hide' : 'Show'} Lines
+					</button>
 				</div>
 				<Stage
 					width={window.innerWidth}
@@ -102,12 +93,12 @@ function App() {
 					<Layer>
 						<Image image={image} ref={imgRef} />
 					</Layer>
-					<Layer>
+					<Layer visible={rectanglesVisible}>
 						{(rectanglesProps ?? []).map((props, i) => (
 							<Rect key={i} {...props} />
 						))}
 					</Layer>
-					<Layer>
+					<Layer visible={linesVisible}>
 						{(linesProps ?? []).map((props, i) => (
 							<Line key={i} {...props} />
 						))}
