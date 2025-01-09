@@ -1,5 +1,5 @@
 import { forwardRef, useRef, useState } from 'react';
-import { Stage, Image, Layer, Rect, Text } from 'react-konva';
+import { Stage, Image, Layer, Rect, Text, Line } from 'react-konva';
 import './App.css';
 import Konva from 'konva';
 import useImage from 'use-image';
@@ -13,9 +13,10 @@ const ColoredRect = () => {
 
 	return <Rect x={20} y={20} width={50} height={50} fill={color} shadowBlur={5} onClick={handleClick} />;
 };
-
+const url =
+	'https://imgin-stage.instrumental.ai/files%2Furn%3Adfx%3Aproject%3A5%2Furn%3Adfx%3Afile%3A3768732%2FPVT-DOE-JDR61762142SLA17X-SOLAR-170220111658.jpg?q=60&s=TzAvOclWasdwiqqQ33cq%2F7SmbPBkhBfANnhu%2FmeMHuE%3D&instck=2bef41cffe1bd5c92ff573019ec5aecb';
 const UnitImage = forwardRef<Konva.Image>((props, ref) => {
-	const [image] = useImage(
+	const [image, status] = useImage(
 		'https://imgin-stage.instrumental.ai/files%2Furn%3Adfx%3Aproject%3A5%2Furn%3Adfx%3Afile%3A3768732%2FPVT-DOE-JDR61762142SLA17X-SOLAR-170220111658.jpg?q=60&s=TzAvOclWasdwiqqQ33cq%2F7SmbPBkhBfANnhu%2FmeMHuE%3D&instck=2bef41cffe1bd5c92ff573019ec5aecb',
 	);
 	return <Image ref={ref} image={image} />;
@@ -27,7 +28,9 @@ function App() {
 	const [stageX, setStageX] = useState(0);
 	const [stageY, setStageY] = useState(0);
 	const imgRef = useRef<Konva.Image>(null);
-	const [rectanglesProps, setRectanglesProps] = useState<Konva.RectConfig[]>([]);
+	const [rectanglesProps, setRectanglesProps] = useState<Konva.RectConfig[] | null>(null);
+	const [linesProps, setLinesProps] = useState<Konva.LineConfig[] | null>(null);
+	const [image, status] = useImage(url);
 
 	const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
 		e.evt.preventDefault();
@@ -51,9 +54,9 @@ function App() {
 		setStageY(pointer.y - mousePointTo.y * newScale);
 	};
 
-	if (rectanglesProps.length === 0 && imgRef.current) {
-		const width = imgRef.current.getWidth() - 420;
-		const height = imgRef.current.getHeight() - 420;
+	if (image && status === 'loaded' && rectanglesProps === null) {
+		const width = image.width - 420;
+		const height = image.height - 420;
 		setRectanglesProps(
 			Array.from({ length: 20 }, () => ({
 				x: Math.random() * width,
@@ -65,7 +68,17 @@ function App() {
 			})),
 		);
 	}
-
+	if (image && status === 'loaded' && linesProps === null) {
+		const width = image.width - 420;
+		const height = image.height - 420;
+		const linesProps = Array.from({ length: 25 }, () => ({
+			points: [Math.random() * width, Math.random() * height, Math.random() * width, Math.random() * height],
+			stroke: Konva.Util.getRandomColor(),
+			strokeWidth: Math.random() * 5 + 1,
+			opacity: 0.5,
+		}));
+		setLinesProps(linesProps);
+	}
 	return (
 		<>
 			<div>
@@ -81,11 +94,16 @@ function App() {
 					onWheel={handleWheel}
 				>
 					<Layer>
-						<UnitImage ref={imgRef} />
+						<Image image={image} ref={imgRef} />
 					</Layer>
 					<Layer>
-						{rectanglesProps.map((props, i) => (
+						{(rectanglesProps ?? []).map((props, i) => (
 							<Rect key={i} {...props} />
+						))}
+					</Layer>
+					<Layer>
+						{(linesProps ?? []).map((props, i) => (
+							<Line key={i} {...props} />
 						))}
 					</Layer>
 				</Stage>
