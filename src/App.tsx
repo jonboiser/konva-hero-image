@@ -3,6 +3,7 @@ import { Stage, Image, Layer, Rect, Text, Line } from 'react-konva';
 import './App.css';
 import Konva from 'konva';
 import useImage from 'use-image';
+import { getFlatPoints, useLineSegment } from './line-segment';
 
 const url = 'https://fastly.picsum.photos/id/9/5000/3269.jpg?hmac=cZKbaLeduq7rNB8X-bigYO8bvPIWtT-mh8GRXtU3vPc';
 
@@ -66,7 +67,8 @@ function App() {
 		setLinesProps(linesProps);
 	}
 
-	const [drawingLineProps, setDrawingLineProps] = useState<Konva.LineConfig | null>(null);
+	const lineSeg = useLineSegment();
+	const [isDrawingLine, setIsDrawingLine] = useState<boolean>(false);
 
 	return (
 		<>
@@ -74,12 +76,12 @@ function App() {
 				<h1>Konva Prototype</h1>
 				<p>
 					Stage scale: {stageScale}
-					Drawing Line: <pre>{JSON.stringify(drawingLineProps, null, 2, 2)}</pre>
+					Drawing Line: {String(isDrawingLine)} <pre>{JSON.stringify(lineSeg.lineSegment)}</pre>
 				</p>
 				<div style={{ marginBottom: '1rem' }}>
 					<button
 						onClick={() => {
-							setDrawingLineProps({ points: [0, 0, 0, 0] });
+							setIsDrawingLine((idl) => !idl);
 						}}
 					>
 						Draw Line
@@ -107,14 +109,38 @@ function App() {
 						const stage = e.target.getStage();
 						if (!stage) return;
 						const mousePos = stage.getPointerPosition() ?? { x: 0, y: 0 };
-						setDrawingLineProps({
-							points: [
-								...(drawingLineProps?.points?.slice(0, 2) ?? [0, 0]),
-								mousePos.x / stageScale,
-								mousePos.y / stageScale,
-							],
+						const { x, y } = stage.getAbsolutePosition();
+						// As I move the mouse around, I update these props, which result in the line being redrawn
+						// If I want to send these coordinates to the server, I need to remember to scale them back to the original image's coords
+						lineSeg.updatePendingPoint({
+							x: (mousePos.x - x) / stageScale,
+							y: (mousePos.y - y) / stageScale,
 						});
-						console.log(e);
+					}}
+					onClick={(e) => {
+						const stage = e.target.getStage();
+						if (!stage) return;
+						const mousePos = stage.getPointerPosition() ?? { x: 0, y: 0 };
+						const { x, y } = stage.getAbsolutePosition();
+						if (isDrawingLine) {
+							lineSeg.handleClick(
+								{
+									x: (mousePos.x - x) / stageScale,
+									y: (mousePos.y - y) / stageScale,
+								},
+								(points) => {
+									setLinesProps([
+										...(linesProps ?? []),
+										{
+											points: points,
+											stroke: 'black',
+											strokeWidth: 10,
+										},
+									]);
+									// setIsDrawingLine(false);
+								},
+							);
+						}
 					}}
 					onWheel={handleWheel}
 				>
@@ -132,7 +158,9 @@ function App() {
 						))}
 					</Layer>
 					<Layer>
-						{drawingLineProps ? <Line strokeWidth={10} stroke="black" {...drawingLineProps} /> : null}
+						{lineSeg.lineSegment?.stage === 'pending' ? (
+							<Line strokeWidth={10} stroke="black" points={getFlatPoints(lineSeg.lineSegment)} />
+						) : null}
 					</Layer>
 				</Stage>
 			</div>
