@@ -83,6 +83,12 @@ function App() {
 		<>
 			<div>
 				<h1>Konva Prototype</h1>
+				<div style={{ marginBottom: '1rem' }}>
+					<button onClick={() => setStageY(stageY + 100)}>⬆️ Pan Up</button>
+					<button onClick={() => setStageY(stageY - 100)}>⬇️ Pan Down</button>
+					<button onClick={() => setStageX(stageX + 100)}>⬅️ Pan Left</button>
+					<button onClick={() => setStageX(stageX - 100)}>➡️ Pan Right</button>
+				</div>
 				<Stage
 					width={window.innerWidth}
 					height={window.innerHeight}
