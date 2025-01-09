@@ -65,11 +65,25 @@ function App() {
 		}));
 		setLinesProps(linesProps);
 	}
+
+	const [drawingLineProps, setDrawingLineProps] = useState<Konva.LineConfig | null>(null);
+
 	return (
 		<>
 			<div>
 				<h1>Konva Prototype</h1>
+				<p>
+					Stage scale: {stageScale}
+					Drawing Line: <pre>{JSON.stringify(drawingLineProps, null, 2, 2)}</pre>
+				</p>
 				<div style={{ marginBottom: '1rem' }}>
+					<button
+						onClick={() => {
+							setDrawingLineProps({ points: [0, 0, 0, 0] });
+						}}
+					>
+						Draw Line
+					</button>
 					<button onClick={() => setStageY(stageY + 100)}>⬆️ Pan Up</button>
 					<button onClick={() => setStageY(stageY - 100)}>⬇️ Pan Down</button>
 					<button onClick={() => setStageX(stageX + 100)}>⬅️ Pan Left</button>
@@ -89,6 +103,19 @@ function App() {
 					scaleY={stageScale}
 					x={stageX}
 					y={stageY}
+					onMouseMove={(e) => {
+						const stage = e.target.getStage();
+						if (!stage) return;
+						const mousePos = stage.getPointerPosition() ?? { x: 0, y: 0 };
+						setDrawingLineProps({
+							points: [
+								...(drawingLineProps?.points?.slice(0, 2) ?? [0, 0]),
+								mousePos.x / stageScale,
+								mousePos.y / stageScale,
+							],
+						});
+						console.log(e);
+					}}
 					onWheel={handleWheel}
 				>
 					<Layer>
@@ -103,6 +130,9 @@ function App() {
 						{(linesProps ?? []).map((props, i) => (
 							<Line key={i} {...props} />
 						))}
+					</Layer>
+					<Layer>
+						{drawingLineProps ? <Line strokeWidth={10} stroke="black" {...drawingLineProps} /> : null}
 					</Layer>
 				</Stage>
 			</div>
