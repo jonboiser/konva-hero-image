@@ -3,7 +3,7 @@ import { Stage, Image, Layer, Rect, Text, Line } from 'react-konva';
 import './App.css';
 import Konva from 'konva';
 import useImage from 'use-image';
-import { getFlatPoints, useLineSegment } from './line-segment';
+import { getFlatPoints, useLineSegment, LineSegment } from './line-segment';
 
 const url = 'https://fastly.picsum.photos/id/9/5000/3269.jpg?hmac=cZKbaLeduq7rNB8X-bigYO8bvPIWtT-mh8GRXtU3vPc';
 
@@ -50,7 +50,8 @@ function App() {
 				y: Math.random() * height,
 				width: Math.random() * 400 + 20,
 				height: Math.random() * 400 + 20,
-				fill: Konva.Util.getRandomColor(),
+				hitStrokeWidth: 30,
+				fill: 'purple',
 				opacity: 0.5,
 			})),
 		);
@@ -58,17 +59,20 @@ function App() {
 	if (image && status === 'loaded' && linesProps === null) {
 		const width = image.width - 420;
 		const height = image.height - 420;
-		const linesProps = Array.from({ length: 25 }, () => ({
+		const linesProps = Array.from({ length: 25 }, (_, idx) => ({
 			points: [Math.random() * width, Math.random() * height, Math.random() * width, Math.random() * height],
-			stroke: Konva.Util.getRandomColor(),
-			strokeWidth: Math.random() * 5 + 1,
+			stroke: 'blue',
+			strokeWidth: 10,
+			hitStrokeWidth: 50,
 			opacity: 0.5,
+			id: `Line-${idx}`,
 		}));
 		setLinesProps(linesProps);
 	}
 
 	const lineSeg = useLineSegment();
 	const [isDrawingLine, setIsDrawingLine] = useState<boolean>(false);
+	const [selectedShape, setSelectedShape] = useState<any>(null);
 
 	return (
 		<>
@@ -99,7 +103,7 @@ function App() {
 				</div>
 				<Stage
 					width={window.innerWidth}
-					height={window.innerHeight}
+					height={window.innerHeight * 0.5}
 					draggable
 					scaleX={stageScale}
 					scaleY={stageScale}
@@ -152,17 +156,55 @@ function App() {
 							<Rect key={i} {...props} />
 						))}
 					</Layer>
-					<Layer visible={linesVisible}>
+					<Layer
+						onMouseOver={(e) => {
+							console.log(e.target);
+							if (e.target) {
+								e.target.setStroke('red');
+								e.target.setStrokeWidth(20);
+								// const newLineProps = linesProps!.map((line) => {
+								// 	if (line.id === e.target?.id()) {
+								// 		return { ...line, stroke: 'red', strokeWidth: 10 };
+								// 	}
+								// 	return line;
+								// });
+								// setLinesProps(newLineProps);
+
+								// setHoveredLine(e.target.index);
+							}
+						}}
+						onClick={(e) => {
+							setSelectedShape(e.target);
+						}}
+						onMouseOut={(e) => {
+							console.log(e);
+							if (e.target) {
+								e.target.setStroke('blue');
+								e.target.setStrokeWidth(10);
+								// const newLineProps = linesProps!.map((line) => {
+								// 	if (line.id === e.target?.id()) {
+								// 		return { ...line, stroke: 'red', strokeWidth: 10 };
+								// 	}
+								// 	return line;
+								// });
+								// setLinesProps(newLineProps);
+
+								// setHoveredLine(e.target.index);
+							}
+						}}
+						visible={linesVisible}
+					>
 						{(linesProps ?? []).map((props, i) => (
-							<Line key={i} {...props} />
+							<Line key={i} hitStrokeWidth={20} {...props} />
 						))}
 					</Layer>
 					<Layer>
-						{lineSeg.lineSegment?.stage === 'pending' ? (
-							<Line strokeWidth={10} stroke="black" points={getFlatPoints(lineSeg.lineSegment)} />
-						) : null}
+						<LineSegment lineSegment={lineSeg.lineSegment} />
 					</Layer>
 				</Stage>
+				<div>
+					Clicked Shape: <pre>{JSON.stringify(selectedShape)}</pre>
+				</div>
 			</div>
 		</>
 	);

@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { Circle, Group, Line } from 'react-konva';
 
 export type Point2D = { x: number; y: number };
 
@@ -71,3 +72,24 @@ export const useLineSegment = () => {
 		getFlatPoints,
 	};
 };
+
+export function LineSegment(props: { lineSegment: LineSegment | null }) {
+	const { lineSegment } = props;
+	if (!lineSegment) return null;
+
+	console.log(lineSegment);
+	return (
+		<Group>
+			{lineSegment.points[0] ? (
+				<Circle
+					x={lineSegment.points[0].x}
+					y={lineSegment.points[0].y}
+					radius={10}
+					strokeWidth={10}
+					stroke="black"
+				/>
+			) : null}
+			<Line strokeWidth={10} stroke="black" points={getFlatPoints(lineSegment)} />
+		</Group>
+	);
+}
