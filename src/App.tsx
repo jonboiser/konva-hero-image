@@ -23,11 +23,46 @@ const UnitImage = () => {
 
 // render(<App />, document.getElementById('root'));
 function App() {
+	const [stageScale, setStageScale] = useState(1);
+	const [stageX, setStageX] = useState(0);
+	const [stageY, setStageY] = useState(0);
+
+	const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
+		e.evt.preventDefault();
+		const scaleBy = 1.1;
+		const stage = e.target.getStage();
+		if (!stage) return;
+
+		const oldScale = stage.scaleX();
+		const pointer = stage.getPointerPosition();
+		if (!pointer) return;
+
+		const mousePointTo = {
+			x: (pointer.x - stage.x()) / oldScale,
+			y: (pointer.y - stage.y()) / oldScale,
+		};
+
+		const newScale = e.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
+
+		setStageScale(newScale);
+		setStageX(pointer.x - mousePointTo.x * newScale);
+		setStageY(pointer.y - mousePointTo.y * newScale);
+	};
+
 	return (
 		<>
 			<div>
 				<h1>Konva Prototype</h1>
-				<Stage width={window.innerWidth} height={window.innerHeight} draggable>
+				<Stage
+					width={window.innerWidth}
+					height={window.innerHeight}
+					draggable
+					scaleX={stageScale}
+					scaleY={stageScale}
+					x={stageX}
+					y={stageY}
+					onWheel={handleWheel}
+				>
 					<Layer>
 						<UnitImage />
 					</Layer>
