@@ -42,6 +42,7 @@ function App() {
 	if (image && status === 'loaded' && rectanglesProps === null) {
 		const width = image.width - 420;
 		const height = image.height - 420;
+		setStageScale(window.innerWidth / width);
 		setRectanglesProps(
 			Array.from({ length: 20 }, () => ({
 				x: Math.random() * width,
