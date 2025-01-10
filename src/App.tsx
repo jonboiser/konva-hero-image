@@ -25,30 +25,57 @@ function App() {
 	useHotkeys('s', () => setStageY(stageY - 100));
 	useHotkeys('a', () => setStageX(stageX + 100));
 	useHotkeys('d', () => setStageX(stageX - 100));
-	useHotkeys('q', () => setStageScale(stageScale / scaleBy));
-	useHotkeys('e', () => setStageScale(stageScale * scaleBy));
 
-	const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
-		e.evt.preventDefault();
-		const scaleBy = 1.1;
-		const stage = e.target.getStage();
+	const handleZoom = (scaleDirection: 'in' | 'out', mousePoint?: { x: number; y: number }) => {
+		const stage = imgRef.current?.getStage();
 		if (!stage) return;
 
-		const oldScale = stage.scaleX();
-		const pointer = stage.getPointerPosition();
-		if (!pointer) return;
+		const oldScale = stageScale;
+		const newScale = scaleDirection === 'in' ? oldScale * scaleBy : oldScale / scaleBy;
 
-		const mousePointTo = {
-			x: (pointer.x - stage.x()) / oldScale,
-			y: (pointer.y - stage.y()) / oldScale,
+		// If no mouse point provided, zoom relative to center
+		const pointer = mousePoint || {
+			x: stage.width() / 2,
+			y: stage.height() / 2,
 		};
 
-		const newScale = e.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
+		const mousePointTo = {
+			x: (pointer.x - stageX) / oldScale,
+			y: (pointer.y - stageY) / oldScale,
+		};
 
 		setStageScale(newScale);
 		setStageX(pointer.x - mousePointTo.x * newScale);
 		setStageY(pointer.y - mousePointTo.y * newScale);
 	};
+
+	// Update wheel handler to use new zoom function
+	const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
+		e.evt.preventDefault();
+		const stage = e.target.getStage();
+		if (!stage) return;
+
+		const pointer = stage.getPointerPosition();
+		if (!pointer) return;
+
+		handleZoom(e.evt.deltaY > 0 ? 'out' : 'in', pointer);
+	};
+
+	// Update hotkeys to use new zoom function
+	useHotkeys('q', () => {
+		const stage = imgRef.current?.getStage();
+		if (!stage) return;
+		const pointer = stage.getPointerPosition();
+		console.log('🚀 ~ useHotkeys ~ pointer:', pointer);
+		handleZoom('out', pointer || undefined);
+	});
+
+	useHotkeys('e', () => {
+		const stage = imgRef.current?.getStage();
+		if (!stage) return;
+		const pointer = stage.getPointerPosition();
+		handleZoom('in', pointer || undefined);
+	});
 
 	if (image && status === 'loaded' && rectanglesProps === null) {
 		const width = image.width - 420;
