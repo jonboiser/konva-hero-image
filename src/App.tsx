@@ -204,6 +204,24 @@ function App() {
 				</Stage>
 				<div>
 					Clicked Shape: <pre>{JSON.stringify(selectedShape)}</pre>
+					<button
+						onClick={() => {
+							if (!selectedShape) return;
+
+							const stage = selectedShape.getStage();
+							if (!stage) return;
+
+							const box = selectedShape.getSelfRect();
+							const scale =
+								Math.min(window.innerWidth / box.width, (window.innerHeight * 0.5) / box.height) * 0.8; // 0.8 to add some padding
+
+							setStageScale(scale);
+							setStageX(window.innerWidth / 2 - (box.x + box.width / 2) * scale);
+							setStageY((window.innerHeight * 0.5) / 2 - (box.y + box.height / 2) * scale);
+						}}
+					>
+						Zoom
+					</button>
 				</div>
 			</div>
 		</>
