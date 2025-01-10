@@ -1,4 +1,4 @@
-import { forwardRef, useRef, useState } from 'react';
+import { forwardRef, useEffect, useRef, useState } from 'react';
 import { Stage, Image, Layer, Rect, Text, Line } from 'react-konva';
 import './App.css';
 import Konva from 'konva';
@@ -73,10 +73,11 @@ function App() {
 	const lineSeg = useLineSegment();
 	const [isDrawingLine, setIsDrawingLine] = useState<boolean>(false);
 	const [selectedShape, setSelectedShape] = useState<any>(null);
+	const appRef = useRef<HTMLDivElement>(null);
 
 	return (
 		<>
-			<div>
+			<div className="the-app" ref={appRef}>
 				<h1>Konva Prototype</h1>
 				<p>
 					Stage scale: {stageScale}
@@ -101,107 +102,137 @@ function App() {
 						{linesVisible ? 'Hide' : 'Show'} Lines
 					</button>
 				</div>
-				<Stage
-					width={window.innerWidth}
-					height={window.innerHeight * 0.5}
-					draggable
-					scaleX={stageScale}
-					scaleY={stageScale}
-					x={stageX}
-					y={stageY}
-					onMouseMove={(e) => {
-						const stage = e.target.getStage();
-						if (!stage) return;
-						const mousePos = stage.getPointerPosition() ?? { x: 0, y: 0 };
-						const { x, y } = stage.getAbsolutePosition();
-						// As I move the mouse around, I update these props, which result in the line being redrawn
-						// If I want to send these coordinates to the server, I need to remember to scale them back to the original image's coords
-						lineSeg.updatePendingPoint({
-							x: (mousePos.x - x) / stageScale,
-							y: (mousePos.y - y) / stageScale,
-						});
-					}}
-					onClick={(e) => {
-						const stage = e.target.getStage();
-						if (!stage) return;
-						const mousePos = stage.getPointerPosition() ?? { x: 0, y: 0 };
-						const { x, y } = stage.getAbsolutePosition();
-						if (isDrawingLine) {
-							lineSeg.handleClick(
-								{
-									x: (mousePos.x - x) / stageScale,
-									y: (mousePos.y - y) / stageScale,
-								},
-								(points) => {
-									setLinesProps([
-										...(linesProps ?? []),
-										{
-											points: points,
-											stroke: 'black',
-											strokeWidth: 10,
-										},
-									]);
-									// setIsDrawingLine(false);
-								},
-							);
-						}
-					}}
-					onWheel={handleWheel}
-				>
-					<Layer>
-						<Image image={image} ref={imgRef} />
-					</Layer>
-					<Layer visible={rectanglesVisible}>
-						{(rectanglesProps ?? []).map((props, i) => (
-							<Rect key={i} {...props} />
-						))}
-					</Layer>
-					<Layer
-						onMouseOver={(e) => {
-							console.log(e.target);
-							if (e.target) {
-								e.target.setStroke('red');
-								e.target.setStrokeWidth(20);
-								// const newLineProps = linesProps!.map((line) => {
-								// 	if (line.id === e.target?.id()) {
-								// 		return { ...line, stroke: 'red', strokeWidth: 10 };
-								// 	}
-								// 	return line;
-								// });
-								// setLinesProps(newLineProps);
+				<div className="hero-image">
+					{(() => {
+						if (!selectedShape) return null;
+						const box = selectedShape.getClientRect();
+						console.log('🚀 ~ App ~ box:', box);
 
-								// setHoveredLine(e.target.index);
-							}
+						return (
+							<div
+								style={{
+									position: 'relative',
+									backgroundColor: 'white',
+									padding: '1rem',
+									border: '1px solid black',
+									borderRadius: '5px',
+									width: 'fit-content',
+									zIndex: 100,
+								}}
+								className="tooltip"
+							>
+								Selected Shape: {selectedShape.attrs.id}
+							</div>
+						);
+					})()}
+					<Stage
+						width={window.innerWidth}
+						height={window.innerHeight * 0.5}
+						draggable
+						scaleX={stageScale}
+						scaleY={stageScale}
+						x={stageX}
+						y={stageY}
+						onMouseMove={(e) => {
+							const stage = e.target.getStage();
+							if (!stage) return;
+							const mousePos = stage.getPointerPosition() ?? { x: 0, y: 0 };
+							const { x, y } = stage.getAbsolutePosition();
+							// As I move the mouse around, I update these props, which result in the line being redrawn
+							// If I want to send these coordinates to the server, I need to remember to scale them back to the original image's coords
+							lineSeg.updatePendingPoint({
+								x: (mousePos.x - x) / stageScale,
+								y: (mousePos.y - y) / stageScale,
+							});
 						}}
 						onClick={(e) => {
-							setSelectedShape(e.target);
-						}}
-						onMouseOut={(e) => {
-							console.log(e);
-							if (e.target) {
-								e.target.setStroke('blue');
-								e.target.setStrokeWidth(10);
-								// const newLineProps = linesProps!.map((line) => {
-								// 	if (line.id === e.target?.id()) {
-								// 		return { ...line, stroke: 'red', strokeWidth: 10 };
-								// 	}
-								// 	return line;
-								// });
-								// setLinesProps(newLineProps);
-
-								// setHoveredLine(e.target.index);
+							const stage = e.target.getStage();
+							if (!stage) return;
+							const mousePos = stage.getPointerPosition() ?? { x: 0, y: 0 };
+							const { x, y } = stage.getAbsolutePosition();
+							if (isDrawingLine) {
+								lineSeg.handleClick(
+									{
+										x: (mousePos.x - x) / stageScale,
+										y: (mousePos.y - y) / stageScale,
+									},
+									(points) => {
+										setLinesProps([
+											...(linesProps ?? []),
+											{
+												points: points,
+												stroke: 'black',
+												strokeWidth: 10,
+											},
+										]);
+										// setIsDrawingLine(false);
+									},
+								);
 							}
 						}}
-						visible={linesVisible}
+						onWheel={handleWheel}
 					>
-						{(linesProps ?? []).map((props, i) => (
-							<Line key={i} hitStrokeWidth={20} {...props} />
-						))}
-					</Layer>
-					<Layer>
-						<LineSegment lineSegment={lineSeg.lineSegment} />
-					</Layer>
-				</Stage>
+						<Layer>
+							<Image image={image} ref={imgRef} />
+						</Layer>
+						<Layer visible={rectanglesVisible}>
+							{(rectanglesProps ?? []).map((props, i) => (
+								<Rect key={i} {...props} />
+							))}
+						</Layer>
+						<Layer
+							onMouseOver={(e) => {
+								console.log(e.target);
+								if (e.target) {
+									e.target.setStroke('red');
+									e.target.setStrokeWidth(20);
+									// const newLineProps = linesProps!.map((line) => {
+									// 	if (line.id === e.target?.id()) {
+									// 		return { ...line, stroke: 'red', strokeWidth: 10 };
+									// 	}
+									// 	return line;
+									// });
+									// setLinesProps(newLineProps);
+
+									// setHoveredLine(e.target.index);
+								}
+							}}
+							onClick={(e) => {
+								const pos = e.target.getStage()?.getPointerPosition();
+								console.log('🚀 ~ App ~ pos:', pos);
+								if (appRef.current) {
+									appRef.current.style.setProperty('--tooltip-top', `${pos?.y}px`);
+									appRef.current.style.setProperty('--tooltip-left', `${pos?.x}px`);
+								}
+								setSelectedShape(e.target);
+							}}
+							onMouseOut={(e) => {
+								console.log(e);
+								if (e.target) {
+									e.target.setStroke('blue');
+									e.target.setStrokeWidth(10);
+									// const newLineProps = linesProps!.map((line) => {
+									// 	if (line.id === e.target?.id()) {
+									// 		return { ...line, stroke: 'red', strokeWidth: 10 };
+									// 	}
+									// 	return line;
+									// });
+									// setLinesProps(newLineProps);
+
+									// setHoveredLine(e.target.index);
+								}
+							}}
+							visible={linesVisible}
+						>
+							{(linesProps ?? []).map((props, i) => (
+								<Line key={i} hitStrokeWidth={20} {...props} />
+							))}
+						</Layer>
+						<Layer>
+							<LineSegment lineSegment={lineSeg.lineSegment} />
+						</Layer>
+					</Stage>
+				</div>
 				<div>
 					Clicked Shape: <pre>{JSON.stringify(selectedShape)}</pre>
 					<button
