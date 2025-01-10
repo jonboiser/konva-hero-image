@@ -135,6 +135,13 @@ function App() {
 	console.log('🚀 ~ App ~ clickPoint:', clickPoint);
 	const clickPointRef = useRef<Konva.Circle | null>(null);
 
+	useEffect(() => {
+		const abs = clickPointRef.current!.getClientRect();
+		const { x, y } = abs;
+		appRef.current!.style.setProperty('--canvas-x-offset', `${x * 1}px`);
+		appRef.current!.style.setProperty('--canvas-y-offset', `${y * 1}px`);
+	}, [clickPoint, clickPointRef, appRef, stageX, stageY]);
+
 	return (
 		<>
 			<div className="the-app" ref={appRef}>
@@ -197,11 +204,11 @@ function App() {
 						onDragMove={(e) => {
 							const stage = e.target.getStage();
 							if (!stage) return;
-							const abs = clickPointRef.current!.getClientRect();
-							console.log(abs);
-							const { x, y } = abs;
-							appRef.current!.style.setProperty('--canvas-x-offset', `${x * 1}px`);
-							appRef.current!.style.setProperty('--canvas-y-offset', `${y * 1}px`);
+							// const abs = clickPointRef.current!.getClientRect();
+							// console.log(abs);
+							// const { x, y } = abs;
+							// appRef.current!.style.setProperty('--canvas-x-offset', `${x * 1}px`);
+							// appRef.current!.style.setProperty('--canvas-y-offset', `${y * 1}px`);
 							setStageX(stage.x());
 							setStageY(stage.y());
 						}}
@@ -288,15 +295,7 @@ function App() {
 									x: (mousePos.x - x) / stageScale,
 									y: (mousePos.y - y) / stageScale,
 								});
-								// const pos = e.target.getStage()?.getPointerPosition();
-								// const stage = e.target.getStage();
-								// const { x, y } = stage!.getAbsolutePosition();
-								// if (appRef.current) {
-								// 	appRef.current.style.setProperty('--tooltip-top', `${pos?.y}px`);
-								// 	appRef.current.style.setProperty('--tooltip-left', `${pos?.x}px`);
-								// 	appRef.current.style.setProperty('--canvas-x-offset', `${x}px`);
-								// 	appRef.current.style.setProperty('--canvas-y-offset', `${y}px`);
-								// }
+
 								setSelectedShape(e.target);
 							}}
 							onMouseOut={(e) => {
