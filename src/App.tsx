@@ -19,10 +19,14 @@ function App() {
 	const [linesProps, setLinesProps] = useState<Konva.LineConfig[] | null>(null);
 	const [image, status] = useImage(url);
 
+	const scaleBy = 1.1; // Add this constant at the top of the component
+
 	useHotkeys('w', () => setStageY(stageY + 100));
 	useHotkeys('s', () => setStageY(stageY - 100));
 	useHotkeys('a', () => setStageX(stageX + 100));
 	useHotkeys('d', () => setStageX(stageX - 100));
+	useHotkeys('q', () => setStageScale(stageScale / scaleBy));
+	useHotkeys('e', () => setStageScale(stageScale * scaleBy));
 
 	const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
 		e.evt.preventDefault();
