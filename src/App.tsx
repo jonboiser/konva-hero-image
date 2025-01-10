@@ -18,6 +18,7 @@ function App() {
 	const [linesVisible, setLinesVisible] = useState(true);
 	const [linesProps, setLinesProps] = useState<Konva.LineConfig[] | null>(null);
 	const [image, status] = useImage(url);
+	const resetParams = useRef({ x: 0, y: 0, scale: 1 });
 
 	const scaleBy = 1.1; // Add this constant at the top of the component
 
@@ -25,6 +26,21 @@ function App() {
 	useHotkeys('s', () => setStageY(stageY - 100));
 	useHotkeys('a', () => setStageX(stageX + 100));
 	useHotkeys('d', () => setStageX(stageX - 100));
+	useHotkeys('r', () => {
+		setStageY(0);
+		setStageX(0);
+		// stageRef.current!.x(0);
+		// stageRef.current!.y(0);
+		// stageRef.current!.scale({ x: resetParams.current.scale, y: resetParams.current.scale });
+		// setStageX(resetParams.current.x);
+		// setStageY(resetParams.current.y);
+		setStageScale(resetParams.current.scale);
+		// console.log(stageRef);
+	});
+	useHotkeys('m', () => {
+		setRectanglesVisible((visible) => !visible);
+		setLinesVisible((visible) => !visible);
+	});
 
 	const handleZoom = (scaleDirection: 'in' | 'out', mousePoint?: { x: number; y: number }) => {
 		const stage = imgRef.current?.getStage();
@@ -80,7 +96,10 @@ function App() {
 	if (image && status === 'loaded' && rectanglesProps === null) {
 		const width = image.width - 420;
 		const height = image.height - 420;
+		console.log('rescale', window.innerHeight / height);
+		resetParams.current = { x: 0, y: 0, scale: window.innerWidth / width };
 		setStageScale(window.innerWidth / width);
+		console.log(resetParams);
 		setRectanglesProps(
 			Array.from({ length: 20 }, () => ({
 				x: Math.random() * width,
@@ -106,6 +125,7 @@ function App() {
 		}));
 		setLinesProps(linesProps);
 	}
+	const stageRef = useRef<Konva.Stage>(null);
 
 	const lineSeg = useLineSegment();
 	const [isDrawingLine, setIsDrawingLine] = useState<boolean>(false);
@@ -171,29 +191,19 @@ function App() {
 						draggable
 						scaleX={stageScale}
 						scaleY={stageScale}
+						ref={stageRef}
 						x={stageX}
 						y={stageY}
 						onDragMove={(e) => {
-							console.log(e);
 							const stage = e.target.getStage();
 							if (!stage) return;
-							// const { x, y } = stage.getAbsolutePosition();
-							// const abs = clickPointRef.current!.getAbsolutePosition(stage);
 							const abs = clickPointRef.current!.getClientRect();
-							console.log('🚀 ~ App ~ abs:', abs);
-							// if (appRef.current) {
-							// 	// const tooltipTop = parseInt(
-							// 	// 	appRef.current.style.getPropertyValue('--tooltip-top') ?? '0',
-							// 	// 	10,
-							// 	// );
-							// 	// const tooltipLeft = parseInt(
-							// 	// 	appRef.current.style.getPropertyValue('--tooltip-left') ?? '0',
-							// 	// 	10,
-							// 	// );
+							console.log(abs);
 							const { x, y } = abs;
 							appRef.current!.style.setProperty('--canvas-x-offset', `${x * 1}px`);
 							appRef.current!.style.setProperty('--canvas-y-offset', `${y * 1}px`);
-							// }
+							setStageX(stage.x());
+							setStageY(stage.y());
 						}}
 						onMouseMove={(e) => {
 							const stage = e.target.getStage();
