@@ -4,6 +4,7 @@ import './App.css';
 import Konva from 'konva';
 import useImage from 'use-image';
 import { getFlatPoints, useLineSegment, LineSegment } from './line-segment';
+import { useHotkeys } from 'react-hotkeys-hook';
 
 const url = 'https://fastly.picsum.photos/id/9/5000/3269.jpg?hmac=cZKbaLeduq7rNB8X-bigYO8bvPIWtT-mh8GRXtU3vPc';
 
@@ -17,6 +18,11 @@ function App() {
 	const [linesVisible, setLinesVisible] = useState(true);
 	const [linesProps, setLinesProps] = useState<Konva.LineConfig[] | null>(null);
 	const [image, status] = useImage(url);
+
+	useHotkeys('w', () => setStageY(stageY + 100));
+	useHotkeys('s', () => setStageY(stageY - 100));
+	useHotkeys('a', () => setStageX(stageX + 100));
+	useHotkeys('d', () => setStageX(stageX - 100));
 
 	const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
 		e.evt.preventDefault();
