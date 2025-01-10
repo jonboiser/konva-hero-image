@@ -46,6 +46,8 @@
 .the-app {
 	--tooltip-top: 0;
 	--tooltip-left: 0;
+	--canvas-x-offset: 0;
+	--canvas-y-offset: 0;
 }
 .hero-image {
 	position: relative;
@@ -53,8 +55,8 @@
 
 .tooltip {
 	position: absolute;
-	top: var(--tooltip-top);
-	left: var(--tooltip-left);
+	top: calc(var(--canvas-y-offset));
+	left: calc(var(--canvas-x-offset));
 	background-color: #f9f9f9;
 	color: #333;
 	border: 1px solid #ccc;

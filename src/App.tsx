@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useRef, useState } from 'react';
-import { Stage, Image, Layer, Rect, Text, Line } from 'react-konva';
+import { Stage, Image, Layer, Rect, Text, Line, Circle } from 'react-konva';
 import './App.css';
 import Konva from 'konva';
 import useImage from 'use-image';
@@ -74,6 +74,9 @@ function App() {
 	const [isDrawingLine, setIsDrawingLine] = useState<boolean>(false);
 	const [selectedShape, setSelectedShape] = useState<any>(null);
 	const appRef = useRef<HTMLDivElement>(null);
+	const [clickPoint, setClickPoint] = useState<{ x: number; y: number } | null>(null);
+	console.log('🚀 ~ App ~ clickPoint:', clickPoint);
+	const clickPointRef = useRef<Konva.Circle | null>(null);
 
 	return (
 		<>
@@ -133,6 +136,28 @@ function App() {
 						scaleY={stageScale}
 						x={stageX}
 						y={stageY}
+						onDragMove={(e) => {
+							console.log(e);
+							const stage = e.target.getStage();
+							if (!stage) return;
+							// const { x, y } = stage.getAbsolutePosition();
+							// const abs = clickPointRef.current!.getAbsolutePosition(stage);
+							const abs = clickPointRef.current!.getClientRect();
+							console.log('🚀 ~ App ~ abs:', abs);
+							// if (appRef.current) {
+							// 	// const tooltipTop = parseInt(
+							// 	// 	appRef.current.style.getPropertyValue('--tooltip-top') ?? '0',
+							// 	// 	10,
+							// 	// );
+							// 	// const tooltipLeft = parseInt(
+							// 	// 	appRef.current.style.getPropertyValue('--tooltip-left') ?? '0',
+							// 	// 	10,
+							// 	// );
+							const { x, y } = abs;
+							appRef.current!.style.setProperty('--canvas-x-offset', `${x * 1}px`);
+							appRef.current!.style.setProperty('--canvas-y-offset', `${y * 1}px`);
+							// }
+						}}
 						onMouseMove={(e) => {
 							const stage = e.target.getStage();
 							if (!stage) return;
@@ -174,6 +199,13 @@ function App() {
 					>
 						<Layer>
 							<Image image={image} ref={imgRef} />
+							<Circle
+								x={clickPoint?.x ?? 0}
+								y={clickPoint?.y ?? 0}
+								radius={50}
+								fill="red"
+								ref={clickPointRef}
+							/>
 						</Layer>
 						<Layer visible={rectanglesVisible}>
 							{(rectanglesProps ?? []).map((props, i) => (
@@ -182,7 +214,6 @@ function App() {
 						</Layer>
 						<Layer
 							onMouseOver={(e) => {
-								console.log(e.target);
 								if (e.target) {
 									e.target.setStroke('red');
 									e.target.setStrokeWidth(20);
@@ -198,16 +229,30 @@ function App() {
 								}
 							}}
 							onClick={(e) => {
-								const pos = e.target.getStage()?.getPointerPosition();
-								console.log('🚀 ~ App ~ pos:', pos);
-								if (appRef.current) {
-									appRef.current.style.setProperty('--tooltip-top', `${pos?.y}px`);
-									appRef.current.style.setProperty('--tooltip-left', `${pos?.x}px`);
-								}
+								const stage = e.target.getStage();
+								if (!stage) return;
+								const mousePos = stage.getPointerPosition() ?? {
+									x: 0,
+									y: 0,
+								};
+
+								const { x, y } = stage.getAbsolutePosition();
+								setClickPoint({
+									x: (mousePos.x - x) / stageScale,
+									y: (mousePos.y - y) / stageScale,
+								});
+								// const pos = e.target.getStage()?.getPointerPosition();
+								// const stage = e.target.getStage();
+								// const { x, y } = stage!.getAbsolutePosition();
+								// if (appRef.current) {
+								// 	appRef.current.style.setProperty('--tooltip-top', `${pos?.y}px`);
+								// 	appRef.current.style.setProperty('--tooltip-left', `${pos?.x}px`);
+								// 	appRef.current.style.setProperty('--canvas-x-offset', `${x}px`);
+								// 	appRef.current.style.setProperty('--canvas-y-offset', `${y}px`);
+								// }
 								setSelectedShape(e.target);
 							}}
 							onMouseOut={(e) => {
-								console.log(e);
 								if (e.target) {
 									e.target.setStroke('blue');
 									e.target.setStrokeWidth(10);
