@@ -22,10 +22,33 @@ function App() {
 
 	const scaleBy = 1.1; // Add this constant at the top of the component
 
-	useHotkeys('w', () => setStageY(stageY + 100));
-	useHotkeys('s', () => setStageY(stageY - 100));
-	useHotkeys('a', () => setStageX(stageX + 100));
-	useHotkeys('d', () => setStageX(stageX - 100));
+	const [activeDirection, setActiveDirection] = useState<'up' | 'down' | 'left' | 'right' | null>(null);
+
+	// Helper function for pan actions
+	const handlePan = (direction: 'up' | 'down' | 'left' | 'right') => {
+		setActiveDirection(direction);
+		setTimeout(() => setActiveDirection(null), 150); // Remove active state after 150ms
+
+		switch (direction) {
+			case 'up':
+				setStageY(stageY + 100);
+				break;
+			case 'down':
+				setStageY(stageY - 100);
+				break;
+			case 'left':
+				setStageX(stageX + 100);
+				break;
+			case 'right':
+				setStageX(stageX - 100);
+				break;
+		}
+	};
+
+	useHotkeys('w', () => handlePan('up'));
+	useHotkeys('s', () => handlePan('down'));
+	useHotkeys('a', () => handlePan('left'));
+	useHotkeys('d', () => handlePan('right'));
 	useHotkeys('r', () => {
 		setStageY(0);
 		setStageX(0);
@@ -152,16 +175,45 @@ function App() {
 				</p>
 				<div style={{ marginBottom: '1rem' }}>
 					<button
-						onClick={() => {
-							setIsDrawingLine((idl) => !idl);
+						style={{
+							backgroundColor: activeDirection === 'up' ? '#4CAF50' : undefined,
+							transform: activeDirection === 'up' ? 'scale(0.95)' : undefined,
+							transition: 'all 0.15s ease',
 						}}
+						onClick={() => handlePan('up')}
 					>
-						Draw Line
+						⬆️ Pan Up
 					</button>
-					<button onClick={() => setStageY(stageY + 100)}>⬆️ Pan Up</button>
-					<button onClick={() => setStageY(stageY - 100)}>⬇️ Pan Down</button>
-					<button onClick={() => setStageX(stageX + 100)}>⬅️ Pan Left</button>
-					<button onClick={() => setStageX(stageX - 100)}>➡️ Pan Right</button>
+					<button
+						style={{
+							backgroundColor: activeDirection === 'down' ? '#4CAF50' : undefined,
+							transform: activeDirection === 'down' ? 'scale(0.95)' : undefined,
+							transition: 'all 0.15s ease',
+						}}
+						onClick={() => handlePan('down')}
+					>
+						⬇️ Pan Down
+					</button>
+					<button
+						style={{
+							backgroundColor: activeDirection === 'left' ? '#4CAF50' : undefined,
+							transform: activeDirection === 'left' ? 'scale(0.95)' : undefined,
+							transition: 'all 0.15s ease',
+						}}
+						onClick={() => handlePan('left')}
+					>
+						⬅️ Pan Left
+					</button>
+					<button
+						style={{
+							backgroundColor: activeDirection === 'right' ? '#4CAF50' : undefined,
+							transform: activeDirection === 'right' ? 'scale(0.95)' : undefined,
+							transition: 'all 0.15s ease',
+						}}
+						onClick={() => handlePan('right')}
+					>
+						➡️ Pan Right
+					</button>
 					<button onClick={() => setRectanglesVisible((visible) => !visible)}>
 						{rectanglesVisible ? 'Hide' : 'Show'} Rectangles
 					</button>
