@@ -23,6 +23,7 @@ function App() {
 	const scaleBy = 1.1; // Add this constant at the top of the component
 
 	const [activeDirection, setActiveDirection] = useState<'up' | 'down' | 'left' | 'right' | null>(null);
+	const [activeAction, setActiveAction] = useState<'zoomIn' | 'zoomOut' | 'reset' | 'toggleDrawings' | null>(null);
 
 	// Helper function for pan actions
 	const handlePan = (direction: 'up' | 'down' | 'left' | 'right') => {
@@ -61,11 +62,13 @@ function App() {
 		// console.log(stageRef);
 	});
 	useHotkeys('m', () => {
-		setRectanglesVisible((visible) => !visible);
-		setLinesVisible((visible) => !visible);
+		handleToggleDrawings();
 	});
 
 	const handleZoom = (scaleDirection: 'in' | 'out', mousePoint?: { x: number; y: number }) => {
+		setActiveAction(scaleDirection === 'in' ? 'zoomIn' : 'zoomOut');
+		setTimeout(() => setActiveAction(null), 150);
+
 		const stage = imgRef.current?.getStage();
 		if (!stage) return;
 
@@ -88,6 +91,15 @@ function App() {
 		setStageY(pointer.y - mousePointTo.y * newScale);
 	};
 
+	const handleReset = () => {
+		setActiveAction('reset');
+		setTimeout(() => setActiveAction(null), 150);
+
+		setStageY(0);
+		setStageX(0);
+		setStageScale(resetParams.current.scale);
+	};
+
 	// Update wheel handler to use new zoom function
 	const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
 		e.evt.preventDefault();
@@ -98,6 +110,13 @@ function App() {
 		if (!pointer) return;
 
 		handleZoom(e.evt.deltaY > 0 ? 'out' : 'in', pointer);
+	};
+
+	const handleToggleDrawings = () => {
+		setActiveAction('toggleDrawings');
+		setTimeout(() => setActiveAction(null), 150);
+		setRectanglesVisible((visible) => !visible);
+		setLinesVisible((visible) => !visible);
 	};
 
 	// Update hotkeys to use new zoom function
@@ -115,6 +134,8 @@ function App() {
 		const pointer = stage.getPointerPosition();
 		handleZoom('in', pointer || undefined);
 	});
+
+	useHotkeys('r', handleReset);
 
 	if (image && status === 'loaded' && rectanglesProps === null) {
 		const width = image.width - 420;
@@ -182,7 +203,7 @@ function App() {
 						}}
 						onClick={() => handlePan('up')}
 					>
-						⬆️ Pan Up
+						⬆️ Pan Up (W)
 					</button>
 					<button
 						style={{
@@ -192,7 +213,7 @@ function App() {
 						}}
 						onClick={() => handlePan('down')}
 					>
-						⬇️ Pan Down
+						⬇️ Pan Down (S)
 					</button>
 					<button
 						style={{
@@ -202,7 +223,7 @@ function App() {
 						}}
 						onClick={() => handlePan('left')}
 					>
-						⬅️ Pan Left
+						⬅️ Pan Left (A)
 					</button>
 					<button
 						style={{
@@ -212,13 +233,49 @@ function App() {
 						}}
 						onClick={() => handlePan('right')}
 					>
-						➡️ Pan Right
+						➡️ Pan Right (D)
 					</button>
-					<button onClick={() => setRectanglesVisible((visible) => !visible)}>
-						{rectanglesVisible ? 'Hide' : 'Show'} Rectangles
+					<button
+						style={{
+							backgroundColor: activeAction === 'zoomIn' ? '#4CAF50' : undefined,
+							transform: activeAction === 'zoomIn' ? 'scale(0.95)' : undefined,
+							transition: 'all 0.15s ease',
+						}}
+						onClick={() => handleZoom('in')}
+					>
+						🔍 Zoom In (E)
 					</button>
-					<button onClick={() => setLinesVisible((visible) => !visible)}>
-						{linesVisible ? 'Hide' : 'Show'} Lines
+					<button
+						style={{
+							backgroundColor: activeAction === 'zoomOut' ? '#4CAF50' : undefined,
+							transform: activeAction === 'zoomOut' ? 'scale(0.95)' : undefined,
+							transition: 'all 0.15s ease',
+						}}
+						onClick={() => handleZoom('out')}
+					>
+						🔍 Zoom Out (Q)
+					</button>
+					<button
+						style={{
+							backgroundColor: activeAction === 'reset' ? '#4CAF50' : undefined,
+							transform: activeAction === 'reset' ? 'scale(0.95)' : undefined,
+							transition: 'all 0.15s ease',
+						}}
+						onClick={handleReset}
+					>
+						🔄 Reset (R)
+					</button>
+					<button
+						style={{
+							backgroundColor: activeAction === 'toggleDrawings' ? '#4CAF50' : undefined,
+							transform: activeAction === 'toggleDrawings' ? 'scale(0.95)' : undefined,
+							transition: 'all 0.15s ease',
+						}}
+						onClick={() => {
+							handleToggleDrawings();
+						}}
+					>
+						{linesVisible && rectanglesVisible ? 'Hide' : 'Show'} All (M)
 					</button>
 				</div>
 				<div className="hero-image">
