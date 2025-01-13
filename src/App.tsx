@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useRef, useState } from 'react';
+import { forwardRef, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Stage, Image, Layer, Rect, Text, Line, Circle } from 'react-konva';
 import './App.css';
 import Konva from 'konva';
