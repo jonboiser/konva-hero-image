@@ -5,6 +5,7 @@ import Konva from 'konva';
 import useImage from 'use-image';
 import { getFlatPoints, useLineSegment, LineSegment } from './line-segment';
 import { useHotkeys } from 'react-hotkeys-hook';
+import { Angle, AngleDrawing, updateAngle, updateAnglePending } from './angle';
 
 const url = 'https://fastly.picsum.photos/id/9/5000/3269.jpg?hmac=cZKbaLeduq7rNB8X-bigYO8bvPIWtT-mh8GRXtU3vPc';
 
@@ -19,6 +20,7 @@ function App() {
 	const [linesProps, setLinesProps] = useState<Konva.LineConfig[] | null>(null);
 	const [image, status] = useImage(url);
 	const resetParams = useRef({ x: 0, y: 0, scale: 1 });
+	const [angleProps, setAngleProps] = useState<Angle[]>([]);
 
 	const scaleBy = 1.1; // Add this constant at the top of the component
 
@@ -172,7 +174,8 @@ function App() {
 	const stageRef = useRef<Konva.Stage>(null);
 
 	const lineSeg = useLineSegment();
-	const [isDrawingLine, setIsDrawingLine] = useState<boolean>(false);
+	const [isDrawing, setIsDrawing] = useState<'angle' | 'line' | null>(null);
+	// const [isDrawingLine, setIsDrawingLine] = useState<boolean>(false);
 	const [selectedShape, setSelectedShape] = useState<any>(null);
 	const appRef = useRef<HTMLDivElement>(null);
 	const [clickPoint, setClickPoint] = useState<{ x: number; y: number } | null>(null);
@@ -185,22 +188,43 @@ function App() {
 		appRef.current!.style.setProperty('--canvas-y-offset', `${y * 1}px`);
 	}, [clickPoint, clickPointRef, appRef, stageX, stageY]);
 
+	const isDrawingLine = isDrawing === 'line';
+	const isDrawingAngle = isDrawing === 'angle';
+	const [angleDrawing, setAngleDrawing] = useState<Angle | null>(null);
+
 	return (
 		<>
 			<div className="the-app" ref={appRef}>
 				<h1>Konva Prototype</h1>
-				<p>
+				<p style={{ height: '12rem', backgroundColor: 'lightgray', padding: '1rem' }}>
 					Stage scale: {stageScale}
-					Drawing Line: {String(isDrawingLine)} <pre>{JSON.stringify(lineSeg.lineSegment)}</pre>
+					{isDrawingLine && (
+						<>
+							Drawing Line: <pre>{JSON.stringify(lineSeg.lineSegment)}</pre>
+						</>
+					)}
+					{isDrawingAngle && (
+						<>
+							Drawing Angle: <pre>{JSON.stringify(angleDrawing)}</pre>
+						</>
+					)}
 				</p>
 				<div style={{ marginBottom: '1rem' }}>
 					<button
 						style={{
 							backgroundColor: isDrawingLine ? '#4CAF50' : undefined,
 						}}
-						onClick={() => setIsDrawingLine((prev) => !prev)}
+						onClick={() => setIsDrawing((prev) => (prev === 'line' ? null : 'line'))}
 					>
 						Draw Line
+					</button>
+					<button
+						style={{
+							backgroundColor: isDrawingAngle ? '#4CAF50' : undefined,
+						}}
+						onClick={() => setIsDrawing((prev) => (prev === 'angle' ? null : 'angle'))}
+					>
+						Draw Angle
 					</button>
 					<button
 						style={{
@@ -335,21 +359,36 @@ function App() {
 							const { x, y } = stage.getAbsolutePosition();
 							// As I move the mouse around, I update these props, which result in the line being redrawn
 							// If I want to send these coordinates to the server, I need to remember to scale them back to the original image's coords
-							lineSeg.updatePendingPoint({
-								x: (mousePos.x - x) / stageScale,
-								y: (mousePos.y - y) / stageScale,
-							});
+							if (isDrawingLine) {
+								lineSeg.updatePendingPoint({
+									x: (mousePos.x - x) / stageScale,
+									y: (mousePos.y - y) / stageScale,
+								});
+							}
+							if (isDrawingAngle && angleDrawing) {
+								setAngleDrawing(
+									updateAnglePending(
+										{
+											x: (mousePos.x - x) / stageScale,
+											y: (mousePos.y - y) / stageScale,
+										},
+										angleDrawing,
+									),
+								);
+							}
 						}}
 						onClick={(e) => {
 							const stage = e.target.getStage();
 							if (!stage) return;
 							const mousePos = stage.getPointerPosition() ?? { x: 0, y: 0 };
 							const { x, y } = stage.getAbsolutePosition();
+							const scaledX = (mousePos.x - x) / stageScale;
+							const scaledY = (mousePos.y - y) / stageScale;
 							if (isDrawingLine) {
 								lineSeg.handleClick(
 									{
-										x: (mousePos.x - x) / stageScale,
-										y: (mousePos.y - y) / stageScale,
+										x: scaledX,
+										y: scaledY,
 									},
 									(points) => {
 										setLinesProps([
@@ -363,6 +402,15 @@ function App() {
 										// setIsDrawingLine(false);
 									},
 								);
+							}
+							if (isDrawingAngle) {
+								const newAngle = updateAngle({ x: scaledX, y: scaledY }, angleDrawing);
+								if (newAngle.stage === 'complete') {
+									setAngleProps([...angleProps, newAngle]);
+									setAngleDrawing(null);
+								} else {
+									setAngleDrawing(newAngle);
+								}
 							}
 						}}
 						onWheel={handleWheel}
@@ -380,6 +428,9 @@ function App() {
 						<Layer visible={rectanglesVisible}>
 							{(rectanglesProps ?? []).map((props, i) => (
 								<Rect key={i} {...props} />
+							))}
+							{angleProps.map((angle, i) => (
+								<AngleDrawing key={i} angle={angle} />
 							))}
 						</Layer>
 						<Layer
@@ -437,6 +488,7 @@ function App() {
 						</Layer>
 						<Layer>
 							<LineSegment lineSegment={lineSeg.lineSegment} />
+							<AngleDrawing angle={angleDrawing} />
 						</Layer>
 					</Stage>
 				</div>
