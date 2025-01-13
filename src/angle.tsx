@@ -1,4 +1,4 @@
-import { Group, Circle, Line, Arc } from 'react-konva';
+import { Group, Circle, Line, Arc, Text } from 'react-konva';
 import { Point2D } from './line-segment';
 
 export type Angle =
@@ -81,8 +81,12 @@ export function AngleDrawing(props: { angle: Angle | null }) {
 
 		// Calculate rotation based on the first vector
 		const rotation = Math.atan2(v1.y, v1.x);
+		let displayAngle = '';
 		if (dir === 1) {
+			displayAngle = `${Math.round((angleRad * 180) / Math.PI)}°`;
 			angleRad = Math.PI * 2 - angleRad;
+		} else {
+			displayAngle = `${Math.round((angleRad * 180) / Math.PI)}°`;
 		}
 
 		return {
@@ -92,6 +96,8 @@ export function AngleDrawing(props: { angle: Angle | null }) {
 			clockwise: dir === 1,
 			angle: (angleRad * 180) / Math.PI,
 			rotation: (rotation * 180) / Math.PI,
+			// Add formatted angle text
+			displayAngle: displayAngle,
 		};
 	};
 
@@ -129,32 +135,50 @@ export function AngleDrawing(props: { angle: Angle | null }) {
 						strokeWidth={10}
 					/>
 					{arcParams && (
-						<Arc
-							x={arcParams.x}
-							y={arcParams.y}
-							angle={arcParams.angle}
-							rotation={arcParams.rotation}
-							innerRadius={arcParams.radius}
-							outerRadius={arcParams.radius}
-							clockwise={arcParams.clockwise}
-							stroke="blue"
-							strokeWidth={2}
-						/>
+						<>
+							<Arc
+								x={arcParams.x}
+								y={arcParams.y}
+								angle={arcParams.angle}
+								rotation={arcParams.rotation}
+								innerRadius={arcParams.radius}
+								outerRadius={arcParams.radius}
+								clockwise={arcParams.clockwise}
+								stroke="blue"
+								strokeWidth={2}
+							/>
+							<Text
+								x={arcParams.x + 10}
+								y={arcParams.y - 10}
+								text={arcParams.displayAngle}
+								fontSize={16}
+								fill="blue"
+							/>
+						</>
 					)}
 				</>
 			) : (
 				arcParams && (
-					<Arc
-						x={arcParams.x}
-						y={arcParams.y}
-						clockwise={arcParams.clockwise}
-						angle={arcParams.angle}
-						rotation={arcParams.rotation}
-						innerRadius={arcParams.radius}
-						outerRadius={arcParams.radius}
-						stroke="blue"
-						strokeWidth={2}
-					/>
+					<>
+						<Arc
+							x={arcParams.x}
+							y={arcParams.y}
+							clockwise={arcParams.clockwise}
+							angle={arcParams.angle}
+							rotation={arcParams.rotation}
+							innerRadius={arcParams.radius}
+							outerRadius={arcParams.radius}
+							stroke="blue"
+							strokeWidth={2}
+						/>
+						<Text
+							x={arcParams.x + 10}
+							y={arcParams.y - 10}
+							text={arcParams.displayAngle}
+							fontSize={16}
+							fill="blue"
+						/>
+					</>
 				)
 			)}
 		</Group>
