@@ -176,7 +176,6 @@ function App() {
 	const [selectedShape, setSelectedShape] = useState<any>(null);
 	const appRef = useRef<HTMLDivElement>(null);
 	const [clickPoint, setClickPoint] = useState<{ x: number; y: number } | null>(null);
-	console.log('🚀 ~ App ~ clickPoint:', clickPoint);
 	const clickPointRef = useRef<Konva.Circle | null>(null);
 
 	useEffect(() => {
@@ -195,6 +194,14 @@ function App() {
 					Drawing Line: {String(isDrawingLine)} <pre>{JSON.stringify(lineSeg.lineSegment)}</pre>
 				</p>
 				<div style={{ marginBottom: '1rem' }}>
+					<button
+						style={{
+							backgroundColor: isDrawingLine ? '#4CAF50' : undefined,
+						}}
+						onClick={() => setIsDrawingLine((prev) => !prev)}
+					>
+						Draw Line
+					</button>
 					<button
 						style={{
 							backgroundColor: activeDirection === 'up' ? '#4CAF50' : undefined,

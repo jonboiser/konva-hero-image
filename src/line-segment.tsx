@@ -14,14 +14,14 @@ export type LineSegment =
 			points: Point2D[];
 	  };
 
-export const initializeLineSegment = (startPoint: Point2D): LineSegment => {
+const initializeLineSegment = (startPoint: Point2D): LineSegment => {
 	return {
 		stage: 'pending',
 		points: [startPoint],
 		pendingPoint: startPoint,
 	};
 };
-export const getFlatPoints = (lineSegment: LineSegment) => {
+const getFlatPoints = (lineSegment: LineSegment) => {
 	if (!lineSegment) return [];
 	if (lineSegment.stage === 'pending') {
 		return [
@@ -32,6 +32,7 @@ export const getFlatPoints = (lineSegment: LineSegment) => {
 	}
 	return lineSegment.points.flatMap((pt) => [pt.x, pt.y]);
 };
+
 export const useLineSegment = () => {
 	const [lineSegment, setLineSegment] = useState<LineSegment | null>(null);
 	const initialize = useCallback((startPoint: Point2D) => {
