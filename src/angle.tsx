@@ -75,19 +75,21 @@ export function AngleDrawing(props: { angle: Angle | null }) {
 
 		// Calculate angle using dot product formula
 		let angleRad = Math.acos(dotProduct / (mag1 * mag2));
+		const crossProduct = v1.x * v2.y - v1.y * v2.x;
 
-		// Always use the acute angle (less than 180 degrees)
-		if (angleRad > Math.PI) {
-			angleRad = 2 * Math.PI - angleRad;
-		}
+		const dir = crossProduct < 0 ? 1 : -1;
 
 		// Calculate rotation based on the first vector
 		const rotation = Math.atan2(v1.y, v1.x);
+		if (dir === 1) {
+			angleRad = Math.PI * 2 - angleRad;
+		}
 
 		return {
 			x: p2.x,
 			y: p2.y,
 			radius: 30,
+			clockwise: dir === 1,
 			angle: (angleRad * 180) / Math.PI,
 			rotation: (rotation * 180) / Math.PI,
 		};
@@ -134,6 +136,7 @@ export function AngleDrawing(props: { angle: Angle | null }) {
 							rotation={arcParams.rotation}
 							innerRadius={arcParams.radius}
 							outerRadius={arcParams.radius}
+							clockwise={arcParams.clockwise}
 							stroke="blue"
 							strokeWidth={2}
 						/>
@@ -144,6 +147,7 @@ export function AngleDrawing(props: { angle: Angle | null }) {
 					<Arc
 						x={arcParams.x}
 						y={arcParams.y}
+						clockwise={arcParams.clockwise}
 						angle={arcParams.angle}
 						rotation={arcParams.rotation}
 						innerRadius={arcParams.radius}
