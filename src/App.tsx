@@ -6,6 +6,7 @@ import useImage from 'use-image';
 import { getFlatPoints, useLineSegment, LineSegment } from './line-segment';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { Angle, AngleDrawing, updateAngle, updateAnglePending } from './angle';
+import { Rectangle, updateRectangle, updateRectanglePending } from './rectangle';
 
 const url = 'https://fastly.picsum.photos/id/9/5000/3269.jpg?hmac=cZKbaLeduq7rNB8X-bigYO8bvPIWtT-mh8GRXtU3vPc';
 
@@ -147,7 +148,7 @@ function App() {
 		setStageScale(window.innerWidth / width);
 		console.log(resetParams);
 		setRectanglesProps(
-			Array.from({ length: 20 }, () => ({
+			Array.from({ length: 2 }, () => ({
 				x: Math.random() * width,
 				y: Math.random() * height,
 				width: Math.random() * 400 + 20,
@@ -161,7 +162,7 @@ function App() {
 	if (image && status === 'loaded' && linesProps === null) {
 		const width = image.width - 420;
 		const height = image.height - 420;
-		const linesProps = Array.from({ length: 25 }, (_, idx) => ({
+		const linesProps = Array.from({ length: 2 }, (_, idx) => ({
 			points: [Math.random() * width, Math.random() * height, Math.random() * width, Math.random() * height],
 			stroke: 'blue',
 			strokeWidth: 10,
@@ -174,7 +175,7 @@ function App() {
 	const stageRef = useRef<Konva.Stage>(null);
 
 	const lineSeg = useLineSegment();
-	const [isDrawing, setIsDrawing] = useState<'angle' | 'line' | null>(null);
+	const [isDrawing, setIsDrawing] = useState<'angle' | 'line' | 'search' | null>(null);
 	// const [isDrawingLine, setIsDrawingLine] = useState<boolean>(false);
 	const [selectedShape, setSelectedShape] = useState<any>(null);
 	const appRef = useRef<HTMLDivElement>(null);
@@ -190,8 +191,27 @@ function App() {
 
 	const isDrawingLine = isDrawing === 'line';
 	const isDrawingAngle = isDrawing === 'angle';
+	const isSearching = isDrawing === 'search';
 	const [angleDrawing, setAngleDrawing] = useState<Angle | null>(null);
+	const [searchRectDrawing, setSearchRectDrawing] = useState<Rectangle | null>(null);
 
+	useEffect(() => {
+		if (!searchRectDrawing) return;
+		const searchRect = stageRef.current!.find('#search-rect')[0];
+		const abs = searchRect.getClientRect();
+		console.log('🚀 ~ useEffect ~ abs:', abs);
+
+		const { x, y } = stageRef.current!.getAbsolutePosition();
+		setClickPoint({
+			x: (abs.x - x) / stageScale,
+			y: (abs.y - y) / stageScale,
+		});
+		// setClickPoint({ x: abs.x, y: abs.y });
+		// const { x, y } = abs;
+		// appRef.current!.style.setProperty('--canvas-x-offset', `${x * 1}px`);
+		// appRef.current!.style.setProperty('--canvas-y-offset', `${y * 1}px`);
+	}, [searchRectDrawing]);
+	console.log('🚀 ~ App ~ searchRectDrawing:', searchRectDrawing);
 	return (
 		<>
 			<div className="the-app" ref={appRef}>
@@ -311,10 +331,7 @@ function App() {
 				</div>
 				<div className="hero-image">
 					{(() => {
-						if (!selectedShape) return null;
-						const box = selectedShape.getClientRect();
-						console.log('🚀 ~ App ~ box:', box);
-
+						if (!selectedShape || isSearching) return null;
 						return (
 							<div
 								style={{
@@ -331,6 +348,39 @@ function App() {
 								Selected Shape: {selectedShape.attrs.id}
 							</div>
 						);
+					})()}
+					{(() => {
+						if (selectedShape) return null;
+						if (searchRectDrawing?.stage === 'complete') {
+							return (
+								<div
+									style={{
+										position: 'relative',
+										backgroundColor: 'white',
+										padding: '1rem',
+										border: '1px solid black',
+										borderRadius: '5px',
+										width: 'fit-content',
+										zIndex: 100,
+									}}
+									className="tooltip"
+								>
+									Search Rectangle:{' '}
+									<pre>
+										{JSON.stringify(
+											{
+												x: searchRectDrawing.points[0].x,
+												y: searchRectDrawing.points[0].y,
+												width: searchRectDrawing.points[1].x - searchRectDrawing.points[0].x,
+												height: searchRectDrawing.points[1].y - searchRectDrawing.points[0].y,
+											},
+											null,
+											2,
+										)}
+									</pre>
+								</div>
+							);
+						}
 					})()}
 					<Stage
 						width={window.innerWidth}
@@ -376,6 +426,17 @@ function App() {
 									),
 								);
 							}
+							if (searchRectDrawing && isSearching) {
+								setSearchRectDrawing(
+									updateRectanglePending(
+										{
+											x: (mousePos.x - x) / stageScale,
+											y: (mousePos.y - y) / stageScale,
+										},
+										searchRectDrawing,
+									),
+								);
+							}
 						}}
 						onClick={(e) => {
 							const stage = e.target.getStage();
@@ -411,6 +472,13 @@ function App() {
 								} else {
 									setAngleDrawing(newAngle);
 								}
+							}
+							if (isSearching) {
+								const newRect = updateRectangle({ x: scaledX, y: scaledY }, searchRectDrawing);
+								if (newRect.stage === 'complete') {
+									setIsDrawing(null);
+								}
+								setSearchRectDrawing(newRect);
 							}
 						}}
 						onWheel={handleWheel}
@@ -489,8 +557,29 @@ function App() {
 						<Layer>
 							<LineSegment lineSegment={lineSeg.lineSegment} />
 							<AngleDrawing angle={angleDrawing} />
+							<Rectangle angle={searchRectDrawing} />
 						</Layer>
 					</Stage>
+					<div
+						style={{
+							position: 'absolute',
+							bottom: 10,
+							left: 10,
+							padding: '1rem',
+							backgroundColor: 'white',
+							zIndex: 100,
+						}}
+					>
+						<button
+							onClick={() => {
+								setSearchRectDrawing(null);
+								setSelectedShape(null);
+								setIsDrawing('search');
+							}}
+						>
+							AI search
+						</button>
+					</div>
 				</div>
 				<div>
 					Clicked Shape: <pre>{JSON.stringify(selectedShape)}</pre>
