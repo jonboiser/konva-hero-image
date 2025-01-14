@@ -105,9 +105,6 @@ export function AngleDrawing(props: { angle: Angle | null }) {
 
 	return (
 		<Group>
-			{angle.points.map((pt, i) => (
-				<Circle key={i} x={pt.x} y={pt.y} radius={5} fill="black" />
-			))}
 			{angle.points.map((point, idx) => {
 				if (idx === angle.points.length - 1) return null;
 				return (
@@ -181,6 +178,9 @@ export function AngleDrawing(props: { angle: Angle | null }) {
 					</>
 				)
 			)}
+			{angle.points.map((pt, i) => (
+				<Circle key={i} x={pt.x} y={pt.y} radius={10} stroke="black" strokeWidth={3} fill="white" />
+			))}
 		</Group>
 	);
 }

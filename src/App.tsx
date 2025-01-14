@@ -7,6 +7,7 @@ import { getFlatPoints, useLineSegment, LineSegment } from './line-segment';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { Angle, AngleDrawing, updateAngle, updateAnglePending } from './angle';
 import { Rectangle, updateRectangle, updateRectanglePending } from './rectangle';
+import { Perpendicular, PerpendicularDrawing, updatePerpendicular, updatePerpendicularPending } from './perpendicular';
 
 const url = 'https://fastly.picsum.photos/id/9/5000/3269.jpg?hmac=cZKbaLeduq7rNB8X-bigYO8bvPIWtT-mh8GRXtU3vPc';
 
@@ -175,12 +176,14 @@ function App() {
 	const stageRef = useRef<Konva.Stage>(null);
 
 	const lineSeg = useLineSegment();
-	const [isDrawing, setIsDrawing] = useState<'angle' | 'line' | 'search' | null>(null);
+	const [isDrawing, setIsDrawing] = useState<'angle' | 'line' | 'search' | 'perpendicular' | null>(null);
 	// const [isDrawingLine, setIsDrawingLine] = useState<boolean>(false);
 	const [selectedShape, setSelectedShape] = useState<any>(null);
 	const appRef = useRef<HTMLDivElement>(null);
 	const [clickPoint, setClickPoint] = useState<{ x: number; y: number } | null>(null);
 	const clickPointRef = useRef<Konva.Circle | null>(null);
+
+	const [perpProps, setPerpProps] = useState<Perpendicular[]>([]);
 
 	useEffect(() => {
 		const abs = clickPointRef.current!.getClientRect();
@@ -194,6 +197,7 @@ function App() {
 	const isSearching = isDrawing === 'search';
 	const [angleDrawing, setAngleDrawing] = useState<Angle | null>(null);
 	const [searchRectDrawing, setSearchRectDrawing] = useState<Rectangle | null>(null);
+	const [perpDrawing, setPerpDrawing] = useState<Perpendicular | null>(null);
 
 	useEffect(() => {
 		if (!searchRectDrawing) return;
@@ -212,11 +216,12 @@ function App() {
 		// appRef.current!.style.setProperty('--canvas-y-offset', `${y * 1}px`);
 	}, [searchRectDrawing]);
 	console.log('🚀 ~ App ~ searchRectDrawing:', searchRectDrawing);
+	const isDrawingPerpendicular = isDrawing === 'perpendicular';
 	return (
 		<>
 			<div className="the-app" ref={appRef}>
 				<h1>Konva Prototype</h1>
-				<p style={{ height: '12rem', backgroundColor: 'lightgray', padding: '1rem' }}>
+				<p style={{ height: '24rem', backgroundColor: 'lightgray', padding: '1rem' }}>
 					Stage scale: {stageScale}
 					{isDrawingLine && (
 						<>
@@ -225,7 +230,12 @@ function App() {
 					)}
 					{isDrawingAngle && (
 						<>
-							Drawing Angle: <pre>{JSON.stringify(angleDrawing)}</pre>
+							Drawing Angle: <pre>{JSON.stringify(angleDrawing, null, 2)}</pre>
+						</>
+					)}
+					{isDrawingPerpendicular && (
+						<>
+							Drawing Perpendicular: <pre>{JSON.stringify(perpDrawing, null, 2)}</pre>
 						</>
 					)}
 				</p>
@@ -245,6 +255,14 @@ function App() {
 						onClick={() => setIsDrawing((prev) => (prev === 'angle' ? null : 'angle'))}
 					>
 						Draw Angle
+					</button>
+					<button
+						style={{
+							backgroundColor: isDrawingPerpendicular ? '#4CAF50' : undefined,
+						}}
+						onClick={() => setIsDrawing((prev) => (prev === 'perpendicular' ? null : 'perpendicular'))}
+					>
+						Draw Perpendicular
 					</button>
 					<button
 						style={{
@@ -437,6 +455,17 @@ function App() {
 									),
 								);
 							}
+							if (isDrawingPerpendicular && perpDrawing) {
+								setPerpDrawing(
+									updatePerpendicularPending(
+										{
+											x: (mousePos.x - x) / stageScale,
+											y: (mousePos.y - y) / stageScale,
+										},
+										perpDrawing,
+									),
+								);
+							}
 						}}
 						onClick={(e) => {
 							const stage = e.target.getStage();
@@ -480,6 +509,17 @@ function App() {
 								}
 								setSearchRectDrawing(newRect);
 							}
+							if (isDrawingPerpendicular) {
+								const newPerp = updatePerpendicular({ x: scaledX, y: scaledY }, perpDrawing);
+								if (newPerp.stage === 'complete') {
+									setIsDrawing(null);
+									setPerpProps([...perpProps, newPerp]);
+
+									setPerpDrawing(null);
+								} else {
+									setPerpDrawing(newPerp);
+								}
+							}
 						}}
 						onWheel={handleWheel}
 					>
@@ -499,6 +539,9 @@ function App() {
 							))}
 							{angleProps.map((angle, i) => (
 								<AngleDrawing key={i} angle={angle} />
+							))}
+							{perpProps.map((perp, i) => (
+								<PerpendicularDrawing key={i} perpendicular={perp} />
 							))}
 						</Layer>
 						<Layer
@@ -558,6 +601,7 @@ function App() {
 							<LineSegment lineSegment={lineSeg.lineSegment} />
 							<AngleDrawing angle={angleDrawing} />
 							<Rectangle angle={searchRectDrawing} />
+							{perpDrawing && <PerpendicularDrawing perpendicular={perpDrawing} />}
 						</Layer>
 					</Stage>
 					<div
