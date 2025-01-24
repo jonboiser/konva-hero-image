@@ -15,6 +15,7 @@ function App() {
 	const [stageScale, setStageScale] = useState(1);
 	const [stageX, setStageX] = useState(0);
 	const [stageY, setStageY] = useState(0);
+	const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 	const imgRef = useRef<Konva.Image>(null);
 	const [rectanglesProps, setRectanglesProps] = useState<Konva.RectConfig[] | null>(null);
 	const [rectanglesVisible, setRectanglesVisible] = useState(true);
@@ -223,6 +224,8 @@ function App() {
 				<h1>Konva Prototype</h1>
 				<p style={{ height: '24rem', backgroundColor: 'lightgray', padding: '1rem' }}>
 					Stage scale: {stageScale}
+					<br />
+					Mouse position: ({mousePos.x.toFixed(2)}, {mousePos.y.toFixed(2)})
 					{isDrawingLine && (
 						<>
 							Drawing Line: <pre>{JSON.stringify(lineSeg.lineSegment)}</pre>
@@ -423,10 +426,18 @@ function App() {
 						onMouseMove={(e) => {
 							const stage = e.target.getStage();
 							if (!stage) return;
+
 							const mousePos = stage.getPointerPosition() ?? { x: 0, y: 0 };
 							const { x, y } = stage.getAbsolutePosition();
-							// As I move the mouse around, I update these props, which result in the line being redrawn
-							// If I want to send these coordinates to the server, I need to remember to scale them back to the original image's coords
+							const { x: stageX, y: stageY } = stage.getRelativePointerPosition()!;
+
+							// Update relative mouse position
+							setMousePos({
+								x: stageX,
+								y: stageY,
+							});
+
+							// Existing mouse move logic
 							if (isDrawingLine) {
 								lineSeg.updatePendingPoint({
 									x: (mousePos.x - x) / stageScale,
